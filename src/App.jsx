@@ -2,7 +2,9 @@ import "./App.css";
 import { useState } from "react";
 import PromptForm from "./components/PromptForm";
 import ResultDisplay from "./components/ResultDisplay";
-import PromptHistory from "./components/PromptHistory";
+import PromptHistory from './components/PromptHistory';
+
+const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
 
 function App() {
   const [result, setResult] = useState("");
@@ -11,15 +13,34 @@ function App() {
   const handleSubmit = async ({ taskType, input }) => {
     setResult("⏳ Thinking...");
     try {
-      const res = await fetch("/api/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "deepseek/deepseek-chat-v3-0324:free",
+            messages: [
+              {
+                role: "system",
+                content: `You are CodePilot, an expert developer assistant. Help the user with the task: "${taskType}".`,
+              },
+              {
+                role: "user",
+                content: input,
+              },
+            ],
+          }),
+        }
+      );
 
-      const data = await res.json();
+      const data = await response.json();
+      console.log("API Response:", data); // 👈 Add this
 
-      console.log("API Response:", data);
       const message = data?.choices?.[0]?.message?.content;
       setResult(message || "⚠️ No response received.");
 
